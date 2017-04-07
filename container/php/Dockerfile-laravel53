@@ -53,5 +53,5 @@ RUN set -xe \
     && rm -rf /home/tmp \
     \
     # write permission
-    && usermod -u 1000 www-data \
+    && usermod -u 1000 www-data
 

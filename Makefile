@@ -5,6 +5,7 @@ init:
 	           ~/.docker/nginx/conf.d \
 	           ~/.docker/php/log \
 	           ~/.docker/database/percona \
+	           ~/.docker/percona/conf.d \
 	           ~/webroot ;\
 	  chcon -Rt svirt_sandbox_file_t ~/.docker ~/webroot
 	make pull
