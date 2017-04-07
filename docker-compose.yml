@@ -1,0 +1,47 @@
+nginx:
+  image: nginx:stable
+  ports:
+    - "80:80"
+    - "443:443"
+  links:
+    - "php"
+  volumes:
+    - ~/webroot:/usr/share/nginx/html
+    - ~/.docker/nginx/log:/usr/share/nginx/log
+    # nginx config & web configs
+    - ~/.docker/nginx/conf.d:/etc/nginx/conf.d
+
+php:
+  build: ./container/php
+  dockerfile: Dockerfile-laravel53
+  ports:
+    - "9000:9000"
+  links:
+    - "percona"
+#    - "memcache"
+#    - "redis"
+  volumes:
+    - ~/.docker/php/log:/var/www/log
+    - ~/webroot:/var/www/html
+
+percona:
+  image: percona:5.6
+  ports:
+    - "3306:3306"
+  volumes:
+    - ~/.docker/database/percona:/var/lib/mysql
+#    - ~/.docker/percona/conf.d:/etc/mysql/conf.d
+  environment:
+#    MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    MYSQL_ROOT_PASSWORD: 12345
+
+#memcache:
+#  image: memcached:1.4
+#  ports:
+#    - "11211:11211"
+#
+#redis:
+#  image: redis:3.0
+#  ports:
+#    - "6379:6379"
+

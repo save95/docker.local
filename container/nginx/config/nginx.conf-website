@@ -1,0 +1,17 @@
+server {
+    listen 80;
+    server_name localhost docker;
+    index index.html index.htm index.php;
+    root  /workdir/htdocs;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location ~ \.php {
+        fastcgi_pass   php:9000; # 这里的 php 为 docker 容器名
+        fastcgi_index  index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/html$fastcgi_script_name; # 这里的 /var/www/html 为 php 容器指定的运行目录绝对路径
+    }
+}
