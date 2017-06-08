@@ -1,8 +1,8 @@
-#docker.local#
+# docker.local
 
 目前只支持 laravel5 环境
 
-##命令##
+## 命令
 
 `make init` 初始化环境。主要建立需要使用的目录、设置权限、下载使用到的 docker 基础镜像
 
@@ -14,11 +14,11 @@
 
 `make clean` 清理废弃资源。主要清理 runtime 目录、<none> 镜像、废弃的 docker 挂载卷
 
-##启动 docker 容器##
+## 启动 docker 容器
 
 `docker-compose up`
 
-##一般启动方式##
+### 一般启动方式
 
 ```bash
 make init
@@ -29,9 +29,9 @@ make clean
 docker-compose up
 ```
 
-##目录说明##
+## 目录说明
 
-`container/php/download` php扩展下载目录
+`container/php/download` php 扩展下载目录
 
 `~/.docker` docker 运行挂载目录
 
