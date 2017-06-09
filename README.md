@@ -29,6 +29,15 @@ make clean
 docker-compose up
 ```
 
+### 进入运行中的容器
+
+```
+docker exec -it NAME /bin/bash
+
+docker exec -it ID /bin/bash
+
+```
+
 ## 目录说明
 
 `container/php/download` php 扩展下载目录

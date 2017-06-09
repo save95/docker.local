@@ -5,6 +5,10 @@ LABEL maintainer="Royee <ms_save95@126.com>"
 # source files
 COPY . /home/tmp/
 
+# composer profile
+ENV PATH="~/.composer/vendor/bin:$PATH" \
+    COMPOSER_ALLOW_SUPERUSER=1
+
 RUN set -xe \
     # move sources.list & php.ini
     && mv /home/tmp/config/sources.list /etc/apt/sources.list \
@@ -48,6 +52,14 @@ RUN set -xe \
     # Composer
     && mv /home/tmp/download/composer.phar /usr/local/bin/composer \
     && chmod 755 /usr/local/bin/composer \
+    # && composer self-update \
+    && composer --ansi --version --no-interaction \
+    # china composer packagist
+    && composer config -g repo.packagist composer https://packagist.laravel-china.org \
+    # install laravelInstaller
+    && composer global require "laravel/installer" \
+    && ~/.composer/vendor/bin/laravel --version \
+    && composer clear-cache \
     \
     # clear
     && rm -rf /home/tmp \
