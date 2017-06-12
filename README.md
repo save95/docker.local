@@ -46,7 +46,7 @@ docker exec -it ID /bin/bash
 
 `~/.docker/nginx/log` nginx 运行日志目录
 
-`~/.docker/nginx/conf.d` nginx 站点配置目录。可以复制 _container/nginx/config/nginx.conf-website_ 
+`~/.docker/nginx/conf.d` nginx 站点配置目录。可以复制 _container/nginx/config/_ 下相关配置
 文件到此目录，需要以 __.conf__ 结尾
 
 `~/.docker/php/log` php 运行日志目录

@@ -2,7 +2,7 @@ server {
     listen 80;
     server_name localhost docker;
     index index.html index.htm index.php;
-    root  /workdir/htdocs;
+    root  /var/www/html;
 
     location / {
         try_files $uri $uri/ /index.html;
