@@ -16,6 +16,8 @@ php:
   dockerfile: Dockerfile-laravel-ssh
   ports:
     - "9000:9000"
+    - "9001:9001"
+    - "22:22"
   links:
     - "percona"
     - "memcache"
@@ -27,6 +29,7 @@ php:
     SSH_ENABLED: "yes"
     SSH_ROOT_PASSWORD: 123456
     XDEBUG_REMOTE_ENABLE: "yes"
+    XDEBUG_REMOTE_PORT: 9001
 
 percona:
   image: percona:5.6
