@@ -1,0 +1,16 @@
+server {
+  listen 80;
+
+  server_name  localhost.html;
+  index index.html index.htm;
+  root  /var/www/html;
+
+
+  include global/return-empty-for-spider.conf;
+  include global/ban-media-file.conf;
+  include global/restrictions.conf;
+  include global/base-file-cache.conf;
+
+
+  access_log /usr/share/nginx/log/web.access.log  main;
+}

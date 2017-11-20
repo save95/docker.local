@@ -1,0 +1,80 @@
+FROM php:5.6-fpm-alpine
+
+LABEL maintainer="Royee <ms_save95@126.com>"
+
+# profile
+ENV PATH="~/.composer/vendor/bin:/usr/local/entrypoint:$PATH" \
+    # sshd
+    SSH_ENABLED='no' \
+    SSH_ROOT_PASSWORD='' \
+    # xdebug
+    XDEBUG_REMOTE_ENABLED='no' \
+    XDEBUG_REMOTE_PORT=9001 \
+    XDEBUG_IDE_KEY='' \
+    # composer
+    COMPOSER_PACKAGIST='' \
+    COMPOSER_ALLOW_SUPERUSER='no' \
+    # laravel
+    LARAVEL_ENABLED='no'
+
+# source files
+COPY download /home/tmp/download
+
+RUN set -xe \
+    # china mirrors
+    && echo "https://mirrors.aliyun.com/alpine/v3.4/main/" > /etc/apk/repositories \
+    && echo "https://mirrors.aliyun.com/alpine/v3.4/community/" >> /etc/apk/repositories \
+    && echo "https://mirrors.ustc.edu.cn/alpine/v3.4/main/" >> /etc/apk/repositories \
+    && echo "https://mirrors.ustc.edu.cn/alpine/v3.4/community/" >> /etc/apk/repositories \
+    # move php.ini
+    #&& mv /home/tmp/config/php56.ini-production /usr/local/etc/php/php.ini \
+    \
+    # install sshd
+    && apk update && apk add --no-cache openssh \
+    # set sshd_config
+    && sed -ri 's/.?UseDNS\s+yes/UseDNS no/' /etc/ssh/sshd_config \
+    && sed -ri 's/.?UsePAM\s+yes/UsePAM no/' /etc/ssh/sshd_config \
+    && sed -ri 's/.?ChallengeResponseAuthentication.+/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config \
+    && sed -ri 's/.?PermitRootLogin.+/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -ri 's/.?PasswordAuthentication.+/PasswordAuthentication yes/' /etc/ssh/sshd_config \
+    \
+    # php runtime
+    && apk add --no-cache bash libmcrypt freetype libjpeg-turbo libpng \
+    # install compiling env
+    && apk add --no-cache --update --virtual .build-deps \
+                autoconf libc-dev gcc make git \
+                libmcrypt-dev \
+                libmemcached-dev \
+                freetype-dev libjpeg-turbo-dev libpng-dev \
+    \
+    # install PHP extensions
+    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+    && docker-php-ext-install gd \
+    && docker-php-ext-install zip mcrypt pdo_mysql \
+    #&& mv /home/tmp/download/redis.tgz /usr/src/php/ext/redis \
+    #&& docker-php-ext-install redis && docker-php-ext-enable redis \
+    && pecl install /home/tmp/download/redis.tgz && docker-php-ext-enable redis \
+    && pecl install /home/tmp/download/memcache.tgz && docker-php-ext-enable memcache \
+    && pecl install /home/tmp/download/xhprof.tgz && docker-php-ext-enable xhprof \
+    && pecl install /home/tmp/download/xdebug.tgz && docker-php-ext-enable xdebug \
+    \
+    # clear
+    && apk del .build-deps \
+    && rm -rf /var/cache/apk/* \
+    && rm -rf /tmp/pear ~/.pearrc \
+    \
+    # Composer
+    && mv /home/tmp/download/composer.phar /usr/local/bin/composer \
+    && chmod 755 /usr/local/bin/composer \
+    && composer clear-cache \
+    \
+    # clear
+    && rm -rf /home/tmp
+
+EXPOSE 22
+
+ENTRYPOINT ["docker-entrypoint"]
+
+COPY ./entrypoint /usr/local/entrypoint/
+
+#CMD ["php-fpm"]

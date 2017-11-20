@@ -1,0 +1,151 @@
+#!/bin/bash
+set -e
+
+# first arg is `-f` or `--some-option`
+if [ "${1#-}" != "$1" ]; then
+    set -- php-fpm "$@"
+    readonly PHP_RUN="$@"
+else
+    readonly PHP_RUN="php-fpm"
+fi
+
+## ssh
+function ssh() {
+    printf "\E[1m> Configure sshd... "
+    if [ "${SSH_ENABLED}" != 'yes' ]; then
+        printf "[disabled]\E[0m \n"
+        return 0
+    else
+        printf "\E[32m[enabled]\E[0m \n"
+    fi
+
+    # set root passowrd in env
+    if [ ${#SSH_ROOT_PASSWORD} -gt 5 ]; then
+        echo "root:${SSH_ROOT_PASSWORD}" | chpasswd
+        printf "Password for 'root' changed to: \E[1m\E[32m${SSH_ROOT_PASSWORD}\E[0m \n"
+    fi
+
+    # start and keep alive deamon & wating self run
+    local servicePath=`command -v service`
+    if [ ${#servicePath} -gt 0 ]; then
+        service ssh start
+    else
+        if [ ! -f "/usr/sbin/sshd" ]; then
+            printf "\E[31m[ERROR ]\E[0m command \`/usr/sbin/sshd\` not found \n"
+            return 0
+        fi
+
+        # generate host keys if not present
+        if [ ! -f "/etc/ssh/ssh_host_rsa_key" ] || [ ! -f "/etc/ssh/ssh_host_dsa_key" ]; then
+            ssh-keygen -A
+        fi
+
+        /usr/sbin/sshd -de > /dev/stdout 2>&1 &
+        sleep 5
+    fi
+
+    return 0
+}
+
+## xdebug
+function xdebug() {
+    printf "\E[1m> Configure xdebug... "
+    if [ "${XDEBUG_REMOTE_ENABLED}" != 'yes' ]; then
+        printf "[disabled]\E[0m \n"
+        return 0
+    else
+        printf "\E[32m[enabled]\E[0m \n"
+    fi
+
+    # php remote debug config
+    readonly XDEBUG_CONF=/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+    if [ ! -f "${XDEBUG_CONF}" ]; then
+        printf "\E[31m[ERROR ]\E[0m Not found \`xdebug.ini\` \n"
+        return 0
+    fi
+
+    printf "Found config file: \`${XDEBUG_CONF}\` \n"
+    echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so" > ${XDEBUG_CONF}
+    echo "xdebug.remote_enable=1" >> ${XDEBUG_CONF}
+    #echo "xdebug.remote_host=192.168.188.105" >> ${XDEBUG_CONF}
+    echo "xdebug.remote_port=${XDEBUG_REMOTE_PORT:-9001}" >> ${XDEBUG_CONF}
+    echo "xdebug.profiler_enable=1" >> ${XDEBUG_CONF}
+    echo "xdebug.remote_connect_back=1" >> ${XDEBUG_CONF}
+    echo "xdebug.scream=0" >> ${XDEBUG_CONF}
+    echo "xdebug.cli_color=1" >> ${XDEBUG_CONF}
+    echo "xdebug.show_local_vars=1" >> ${XDEBUG_CONF}
+
+    printf "XDebug Server listening on :: port \E[1m${XDEBUG_REMOTE_PORT:-9001}\E[0m. \n"
+    if [ ${#XDEBUG_IDE_KEY} -gt 0 ]; then
+        echo "xdebug.idekey=PHPSTORM" >> ${XDEBUG_CONF}
+        printf "  IDE_KEY: \E[1m${XDEBUG_IDE_KEY}\E[0m \n"
+    fi
+
+    return 0
+}
+
+## composer setting
+function composer() {
+    printf "\E[1m> Configure composer... "
+    # check composer
+    if [ ! -f "/usr/local/bin/composer" ]; then
+        printf "[disabled]\E[0m \n"
+        return 0
+    else
+        printf "\E[32m[enabled]\E[0m \n"
+    fi
+
+    # no warning by superuser
+    if [ "${COMPOSER_ALLOW_SUPERUSER}" == 'yes' ]; then
+        printf "set composer allow superuser... \n"
+        /usr/local/bin/composer --ansi --version --no-interaction
+    fi
+
+    printf "Updating composer... \n"
+    /usr/local/bin/composer self-update
+
+    # set packagist
+    printf "Set composer packagist... "
+    if [ ${#COMPOSER_PACKAGIST} -gt 0 ]; then
+        printf "\n  set global packagist: ${COMPOSER_PACKAGIST} \n"
+        /usr/local/bin/composer config -g repo.packagist composer ${COMPOSER_PACKAGIST}
+    else
+        printf "[skip]\n"
+    fi
+
+    printf "Clean composer cache... \n"
+    /usr/local/bin/composer clear-cache
+}
+
+## laravel
+function laravenInstaller() {
+    printf "\E[1m> Configure laravel installer... "
+    if [ "${LARAVEL_ENABLED}" != 'yes' ]; then
+        printf "[disabled]\E[0m \n"
+        return 0
+    else
+        printf "\E[32m[enabled]\E[0m \n"
+    fi
+
+    # check composer
+    if [ ! -f "/usr/local/bin/composer" ]; then
+        printf "\E[31m[ERROR ]\E[0m command \`composer\` not found \n"
+        return 0
+    fi
+
+    # laravel installer
+    printf "install \`laravel/installer\`... \n"
+    /usr/local/bin/composer global require "laravel/installer"
+    /usr/local/bin/composer clear-cache
+    ~/.composer/vendor/bin/laravel --version
+
+    return 0
+}
+
+printf "Run for the first time may be slow, Please waiting \n"
+ssh
+xdebug
+composer
+laravenInstaller
+printf "\E[1m> Starting php-fpm... \E[0m \n"
+exec "$PHP_RUN"

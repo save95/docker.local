@@ -1,6 +1,12 @@
 #!/bin/bash
 set -xe
 
+printf "  entrypoint.... \n"
+printf "  SSH_ENABLED: ${SSH_ENABLED} \n"
+printf "  SSH_ROOT_PASSWORD: ${SSH_ROOT_PASSWORD} \n"
+printf "  XDEBUG_REMOTE_ENABLED: ${XDEBUG_REMOTE_ENABLED} \n"
+printf "  LARAVEL_ENABLED: ${LARAVEL_ENABLED} \n"
+
 # first arg is `-f` or `--some-option`
 if [ "${1#-}" != "$1" ]; then
     set -- php-fpm "$@"
@@ -10,10 +16,12 @@ else
 fi
 
 # ssh
-if [ "${SSH_ENABLED}" == 'yes' ];then
+if [ "${SSH_ENABLED}" == 'yes' ]; then
+    printf "> Configure & Start ssh... \n"
     # set root passowrd in env
     if [ ${#SSH_ROOT_PASSWORD} -gt 5 ]; then
         echo "root:${SSH_ROOT_PASSWORD}" | chpasswd
+        printf "  root user password has been changed to: \E[1m\E[32m${SSH_ROOT_PASSWORD}\E[0m \n"
     fi
 
     # ssh start
@@ -22,7 +30,9 @@ if [ "${SSH_ENABLED}" == 'yes' ];then
     service ssh start
 fi
 
-if [ "${XDEBUG_REMOTE_ENABLE}" == 'yes' ]; then
+# xdebug
+if [ "${XDEBUG_REMOTE_ENABLED}" == 'yes' ]; then
+    printf "> Configure xdebug... \n"
     # php remote debug config
     readonly XDEBUG_CONF=/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
     if [ -f "${XDEBUG_CONF}" ]; then
@@ -36,10 +46,21 @@ if [ "${XDEBUG_REMOTE_ENABLE}" == 'yes' ]; then
         echo "xdebug.scream=0" >> ${XDEBUG_CONF}
         echo "xdebug.cli_color=1" >> ${XDEBUG_CONF}
         echo "xdebug.show_local_vars=1" >> ${XDEBUG_CONF}
+
+        printf "  \E[32m[SUCESS]\E[0m xdebug started. PROT: \E[1m${XDEBUG_REMOTE_PORT:-9001}\E[0m \n"
     else
-        printf "no found xdebug.ini \n"
+        printf "  \E[31m[ERROR ]\E[0m no found xdebug.ini \n"
     fi
 fi
 
-#php-fpm
+# laravel
+if [ "${LARAVEL_ENABLED}" == 'yes' ]; then
+    /usr/local/bin/composer self-update
+    # laravel installer
+    /usr/local/bin/composer global require "laravel/installer"
+    ~/.composer/vendor/bin/laravel --version
+fi
+
+# php-fpm
+printf "> Starting php-fpm... \n"
 exec "$PHP_RUN"
