@@ -40,6 +40,7 @@ percona:
     - /home/docker/.database/percona:/var/lib/mysql
   environment:
     MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    #ZMYSQL_ROOT_PASSWORD: 12345
 
 memcache:
   image: memcached:1.5-alpine
