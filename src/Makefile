@@ -35,8 +35,8 @@ learn:
 	docker run -d -p 8000:80 twang2218/blog.lab99.org
 	@echo 'open site http://127.0.0.1:8000'
 
-up:
-	$(shell shell/make/docker-compose.sh "$@")
+server:
+	@bin/start.sh
 #	docker-compose up
 
 clean:
