@@ -22,10 +22,10 @@ COPY ./entrypoint /home/tmp/entrypoint
 
 RUN set -xe \
     # china mirrors
-    && echo "https://mirrors.aliyun.com/alpine/v${ALPINE_VERSION}/main/" > /etc/apk/repositories \
     && sed -ri 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
     # move php.ini
-    #&& mv /home/tmp/config/php56.ini-production /usr/local/etc/php/php.ini \
+    #&& cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini \
+    #&& cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini \
     \
     # install sshd
     && apk update && apk add --no-cache openssh \

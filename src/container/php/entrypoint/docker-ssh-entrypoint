@@ -36,7 +36,7 @@ if [ "${XDEBUG_REMOTE_ENABLED}" == 'yes' ]; then
     # php remote debug config
     readonly XDEBUG_CONF=/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
     if [ -f "${XDEBUG_CONF}" ]; then
-        echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so" > ${XDEBUG_CONF}
+        #echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so" > ${XDEBUG_CONF}
         #echo "xdebug.idekey=PHPSTORM" >> ${XDEBUG_CONF}
         echo "xdebug.remote_enable=1" >> ${XDEBUG_CONF}
         #echo "xdebug.remote_host=192.168.188.105" >> ${XDEBUG_CONF}

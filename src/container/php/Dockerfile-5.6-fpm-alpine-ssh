@@ -21,15 +21,6 @@ ENV PATH="~/.composer/vendor/bin:/usr/local/entrypoint:$PATH" \
 COPY ./entrypoint /home/tmp/entrypoint
 
 RUN set -xe \
-    #&& ALPINE_VERSION=`head -n1 /etc/issue | awk '{print $5}'` \
-    #&& echo "${ALPINE_VERSION}v" \
-    #&& cp /etc/apk/repositories /etc/apk/repositories.default \
-    #&& ALPINE_VERSION=`head -n1 /etc/apk/repositories | awk -F'/' '{sub(/^v+/, "", $5);print $5}'` \
-    ## china mirrors
-    #&& echo "https://mirrors.aliyun.com/alpine/v${ALPINE_VERSION}/main/" > /etc/apk/repositories \
-    #&& echo "https://mirrors.aliyun.com/alpine/v${ALPINE_VERSION}/community/" >> /etc/apk/repositories \
-    #&& echo "https://mirrors.ustc.edu.cn/alpine/v${ALPINE_VERSION}/main/" >> /etc/apk/repositories \
-    #&& echo "https://mirrors.ustc.edu.cn/alpine/v${ALPINE_VERSION}/community/" >> /etc/apk/repositories \
     # china mirrors
     && sed -ri 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
     # move php.ini
