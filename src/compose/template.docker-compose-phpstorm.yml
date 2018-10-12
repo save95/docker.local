@@ -11,6 +11,17 @@ services:
       - {HOME}/.docker.local/logs/php/log:/var/www/log
       - {HOME}/.docker.local/configs/php/php.ini:/usr/local/etc/php/php.ini
 
+  php7:
+    image: ide_php_cli:7
+    build:
+      context: ../container/php
+      dockerfile: Dockerfile-7-phpstorm
+    container_name: ide_cli
+    volumes:
+      - {WEB_ROOT}:/var/www/html
+      - {HOME}/.docker.local/logs/php/log:/var/www/log
+      - {HOME}/.docker.local/configs/php/php.ini:/usr/local/etc/php/php.ini
+
   medlinker:
     image: medlinker_cli:latest
     build:
