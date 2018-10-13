@@ -15,12 +15,10 @@ services:
 
   php:
     build:
-      context: ./container/php
-      dockerfile: Dockerfile-5.6-fpm-alpine-ssh
+      context: ../container/php
+      dockerfile: Dockerfile-7-fpm-alpine
     ports:
       - "9000:9000"
-      - "9001:9001"
-      - "2222:22"
     links:
       - "percona"
       - "memcache"
@@ -28,12 +26,14 @@ services:
     volumes:
       - {WEB_ROOT}:/var/www/html
       - {HOME}/.docker.local/logs/php/log:/var/www/log
+      - {HOME}/.docker.local/configs/php/php.ini:/usr/local/etc/php/php.ini
+      - {HOME}/.docker.local/configs/php/conf.d/docker-php-ext-xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+      - {HOME}/.docker.local/configs/.ssh:/root/.ssh
     environment:
-      COMPOSER_PACKAGIST: 'https://packagist.phpcomposer.com'
-      SSH_ENABLED: "yes"
+      COMPOSER_PACKAGIST: 'https://packagist.laravel-china.org'
+      SSH_ENABLED: "no"
       SSH_ROOT_PASSWORD: 123456
-      XDEBUG_REMOTE_ENABLE: "yes"
-      XDEBUG_REMOTE_PORT: 9001
+    entrypoint: docker-entrypoint
 
   percona:
     image: percona:5.6
@@ -43,7 +43,7 @@ services:
       - {HOME}/.docker.local/.databases/percona:/var/lib/mysql
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      #ZMYSQL_ROOT_PASSWORD: 12345
+      MYSQL_ROOT_PASSWORD: 12345
 
   memcache:
     image: memcached:1.5-alpine
@@ -54,3 +54,4 @@ services:
     image: redis:3.2-alpine
     ports:
       - "6379:6379"
+

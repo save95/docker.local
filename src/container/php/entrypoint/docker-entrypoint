@@ -25,6 +25,15 @@ function ssh() {
         printf "Password for 'root' changed to: \E[1m\E[32m${SSH_ROOT_PASSWORD}\E[0m \n"
     fi
 
+    # set sshd_config
+    sed -ri 's/.?UseDNS\s+yes/UseDNS no/' /etc/ssh/sshd_config
+    sed -ri 's/.?UsePAM\s+yes/UsePAM no/' /etc/ssh/sshd_config
+    sed -ri 's/.?ChallengeResponseAuthentication.+/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
+    sed -ri 's/.?PermitRootLogin.+/PermitRootLogin yes/' /etc/ssh/sshd_config
+    sed -ri 's/.?PasswordAuthentication.+/PasswordAuthentication yes/' /etc/ssh/sshd_config
+    sed -ri 's/.?ClientAliveInterval.+/ClientAliveInterval 60/' /etc/ssh/sshd_config
+    sed -ri 's/.?ClientAliveCountMax.+/ClientAliveCountMax 3/' /etc/ssh/sshd_config
+
     # start and keep alive deamon & wating self run
     local servicePath=`command -v service`
     if [ ${#servicePath} -gt 0 ]; then
@@ -49,36 +58,31 @@ function ssh() {
 
 ## xdebug
 function xdebug() {
-    printf "\E[1m> Configure xdebug... "
-    if [ "${XDEBUG_REMOTE_ENABLED}" != 'yes' ]; then
+    printf "\E[1m> Check xdebug... "
+    # xdebug check
+    readonly XDEBUG_SO=/usr/local/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so
+    if [ ! -f "${XDEBUG_SO}" ]; then
         printf "[disabled]\E[0m \n"
         return 0
     else
         printf "\E[32m[enabled]\E[0m \n"
     fi
 
-    # php remote debug config
     readonly XDEBUG_CONF=/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
-    if [ ! -f "${XDEBUG_CONF}" ]; then
-        printf "\E[31m[ERROR ]\E[0m Not found \`xdebug.ini\` \n"
-        return 0
+    # append conf.e/xdebug.ini
+    readonly EXTEND_CONF=/usr/local/etc/php/conf.e/docker-php-ext-xdebug.ini
+    if [ -f "${EXTEND_CONF}" ]; then
+        cat ${EXTEND_CONF} >> ${XDEBUG_CONF}
+    else
+        printf "\E[33mPlease volume file: \`${EXTEND_CONF}\`\E[0m \n"
     fi
 
-    printf "Found config file: \`${XDEBUG_CONF}\` \n"
-    echo "zend_extension=/usr/local/lib/php/extensions/no-debug-non-zts-20131226/xdebug.so" > ${XDEBUG_CONF}
-    echo "xdebug.remote_enable=1" >> ${XDEBUG_CONF}
-    #echo "xdebug.remote_host=192.168.188.105" >> ${XDEBUG_CONF}
-    echo "xdebug.remote_port=${XDEBUG_REMOTE_PORT:-9001}" >> ${XDEBUG_CONF}
-    echo "xdebug.profiler_enable=1" >> ${XDEBUG_CONF}
-    echo "xdebug.remote_connect_back=1" >> ${XDEBUG_CONF}
-    echo "xdebug.scream=0" >> ${XDEBUG_CONF}
-    echo "xdebug.cli_color=1" >> ${XDEBUG_CONF}
-    echo "xdebug.show_local_vars=1" >> ${XDEBUG_CONF}
-
-    printf "XDebug Server listening on :: port \E[1m${XDEBUG_REMOTE_PORT:-9001}\E[0m. \n"
-    if [ ${#XDEBUG_IDE_KEY} -gt 0 ]; then
-        echo "xdebug.idekey=PHPSTORM" >> ${XDEBUG_CONF}
-        printf "  IDE_KEY: \E[1m${XDEBUG_IDE_KEY}\E[0m \n"
+    # show debug port
+    readonly XDEBUG_REMOTE_PORT=`grep 'xdebug.remote_port' ${XDEBUG_CONF} | awk -F'=' '{print $2}'`
+    if [ ${#XDEBUG_REMOTE_PORT} -gt 0 ]; then
+        printf "XDebug Server listening on :: port \E[1m${XDEBUG_REMOTE_PORT}\E[0m. \n"
+    else
+        printf "\E[33mXDebug Server listening port not set.\E[0m \n"
     fi
 
     return 0
@@ -107,7 +111,7 @@ function composer() {
     # set packagist
     printf "Set composer packagist... "
     if [ ${#COMPOSER_PACKAGIST} -gt 0 ]; then
-        printf "\n  set global packagist: ${COMPOSER_PACKAGIST} \n"
+        printf "\n  global packagist: ${COMPOSER_PACKAGIST} \n"
         /usr/local/bin/composer config -g repo.packagist composer ${COMPOSER_PACKAGIST}
     else
         printf "[skip]\n"

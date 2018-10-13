@@ -7,55 +7,41 @@ ENV PATH="~/.composer/vendor/bin:/usr/local/entrypoint:$PATH" \
     # sshd
     SSH_ENABLED='no' \
     SSH_ROOT_PASSWORD='' \
-    # xdebug
-    XDEBUG_REMOTE_ENABLED='no' \
-    XDEBUG_REMOTE_PORT=9001 \
-    XDEBUG_IDE_KEY='' \
     # composer
     COMPOSER_PACKAGIST='' \
     COMPOSER_ALLOW_SUPERUSER='no' \
     # laravel
     LARAVEL_ENABLED='no'
 
-# source files
-COPY ./entrypoint /home/tmp/entrypoint
-
 RUN set -xe \
     # china mirrors
     && sed -ri 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
-    # move php.ini
+    # copy php.ini
     #&& cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini \
     #&& cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini \
     \
-    # install sshd
-    && apk update && apk add --no-cache openssh \
-    # set sshd_config
-    && sed -ri 's/.?UseDNS\s+yes/UseDNS no/' /etc/ssh/sshd_config \
-    && sed -ri 's/.?UsePAM\s+yes/UsePAM no/' /etc/ssh/sshd_config \
-    && sed -ri 's/.?ChallengeResponseAuthentication.+/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config \
-    && sed -ri 's/.?PermitRootLogin.+/PermitRootLogin yes/' /etc/ssh/sshd_config \
-    && sed -ri 's/.?PasswordAuthentication.+/PasswordAuthentication yes/' /etc/ssh/sshd_config \
-    \
     # php runtime
-    && apk add --no-cache bash libmcrypt freetype libjpeg-turbo libpng \
+    && apk add --no-cache bash openssh libmcrypt freetype libjpeg-turbo libpng \
     # install compiling env
     && apk add --no-cache --update --virtual .build-deps \
                 autoconf libc-dev gcc make git \
                 libmcrypt-dev \
                 freetype-dev libjpeg-turbo-dev libpng-dev \
     \
-    # install PHP extensions
+    # install PHP Bundled
     && docker-php-ext-install -j$(nproc) iconv \
     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
     && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-install zip pdo_mysql \
+    && docker-php-ext-install zip pdo_mysql bcmath json mbstring exif fileinfo \
+    \
+    # install PHP extensions
     # memcached
     && apk add --no-cache libmemcached-dev zlib-dev \
-    && pecl install memcached-3.0.4 \
+    && pecl install memcached-3.0.4 && docker-php-ext-enable memcached \
+    \
     # other
-    && pecl install redis-4.1.1 \
-    && pecl install xdebug-2.6.0 \
-    && docker-php-ext-enable memcached redis xdebug \
+    && pecl install redis-4.1.1 && docker-php-ext-enable redis \
+    && pecl install xdebug-2.6.0 && docker-php-ext-enable xdebug \
     \
     # clear
     && apk del .build-deps \
@@ -65,15 +51,15 @@ RUN set -xe \
     # Composer
     && wget https://getcomposer.org/composer.phar -O /usr/local/bin/composer \
     && chmod a+x /usr/local/bin/composer \
+    && composer clear-cache
+
+# source files
+COPY ./entrypoint /home/tmp/entrypoint
+
+RUN set -xe \
     # Entrypoint
     && chmod a+x /home/tmp/entrypoint/* \
     && mv /home/tmp/entrypoint /usr/local/entrypoint \
     \
     # clear
     && rm -rf /home/tmp
-
-EXPOSE 22
-
-ENTRYPOINT ["docker-entrypoint"]
-
-#CMD ["php-fpm"]
